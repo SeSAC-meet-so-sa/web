@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useIsModalStore } from "@/store/ModalStore";
 import axios from "axios";
-import { themeFonts, fontImageMap } from "@/assets/common/themeFonts";
+import { fontImageMap } from "@/assets/common/themeFonts";
 import usePagination, {
   AfterIcon,
   BeforeIcon,
@@ -48,7 +48,7 @@ export default function Font() {
   const [fonts, setFonts] = useState<
     { _id: number; name: string; price: number }[]
   >([]);
-  const [loading, setLoading] = useState(true);
+  const [_, setLoading] = useState(true);
 
   const [modalData, setModalData] = useState<{
     name: string;
@@ -65,7 +65,6 @@ export default function Font() {
   ) => void;
 
   const isModalOpen = (type?: string | null) => {
-    console.log(type);
     setIsModalClick(type || null); // type이 없으면 null을 설정
   };
 
@@ -82,13 +81,9 @@ export default function Font() {
       });
   }, []);
 
-  console.log(loading);
-  console.log(themeFonts);
-
   // Theme에서 selectedFonts가 초기화되면 체크박스도 초기화
   useEffect(() => {
     if (isModal === null) {
-      console.log("모달이 닫혔을 때 체크박스 초기화 실행");
       setClickedStates({});
     }
   }, [isModal]);
@@ -107,6 +102,12 @@ export default function Font() {
       [font.id]: !prevStates[font.id], // 기존 값 반전
     }));
   };
+
+  useEffect(() => {
+    if (!isModal) {
+      setSelectedFonts([]);
+    }
+  }, [isModal]);
 
   // 유저 ID 가져오기
   const getUserId = async (): Promise<string | null> => {
@@ -156,25 +157,13 @@ export default function Font() {
         return;
       }
 
-      // 포인트 차감 API 요청
-      const pointResponse = await axios.patch(
-        `https://api.meet-da.site/user/${userId}/points`,
-        { delta: -totalPrice, description: truncatedNames },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (pointResponse.status !== 200) {
-        setModalData({ name: "포인트 부족", content: "포인트가 부족합니다." });
-        setIsModalClick("deleteThemeCompleteModal");
-        return;
-      }
-
       // 폰트 구매 요청
       const purchasedItems: string[] = [];
 
       await Promise.all(
         selectedFonts.map(async (item) => {
           try {
+            // 개별 구매 요청을 수행하며, 포인트 차감은 서버에서 처리하도록 변경
             const purchaseResponse = await axios.post(
               `https://api.meet-da.site/store/buy/${item.id}`,
               {},
@@ -190,12 +179,11 @@ export default function Font() {
         })
       );
 
-      // 구매 결과에 따라 모달 변경
       if (purchasedItems.length > 0) {
         setModalData({
           name: purchasedItems.join(", "),
-          content: "구매가 완료되었습니다.",
           price: totalPrice,
+          content: "구매가 완료되었습니다.",
         });
         setIsModalClick("pointModal");
       } else {
