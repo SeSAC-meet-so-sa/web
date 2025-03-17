@@ -100,7 +100,6 @@ export default function FeedPage() {
     fetchPosts(1, sortKey.toLowerCase());
   };
 
-
   const [moodIcons, setMoodIcons] = useState(themeImages);
 
   useEffect(() => {
