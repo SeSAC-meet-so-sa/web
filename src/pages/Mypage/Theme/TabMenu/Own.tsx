@@ -142,25 +142,18 @@ export default function Own() {
 
     // 사용자별 적용된 테마 및 폰트 불러오기
     const storedFont = sessionStorage.getItem(`appliedFont_${userId}`);
-    localStorage.removeItem("appliedTheme");
-
     const storedTheme = sessionStorage.getItem(`appliedTheme_${userId}`);
+
+    if (storedFont) {
+      document.body.style.fontFamily = storedFont;
+    }
 
     if (storedTheme) {
       const parsedTheme = JSON.parse(storedTheme);
-
-      localStorage.setItem(
-        `appliedTheme_${userId}`,
-        JSON.stringify(parsedTheme)
-      );
       localStorage.setItem(
         "moodIcons",
         JSON.stringify(moodIconMap[parsedTheme.name])
       );
-    }
-
-    if (storedFont) {
-      document.body.style.fontFamily = storedFont;
     }
   }, []);
 
@@ -200,38 +193,27 @@ export default function Own() {
       // 테마 적용
       if (type === "THEME") {
         const appliedTheme = ownThemes.find((theme) => theme.id === itemId);
-
-        if (!appliedTheme) {
-          return;
-        }
-
-        sessionStorage.setItem(
-          `appliedTheme_${userId}`,
-          JSON.stringify(appliedTheme)
-        );
-
-        localStorage.removeItem("appliedTheme");
-        localStorage.setItem(
-          `appliedTheme_${userId}`,
-          JSON.stringify(appliedTheme)
-        );
-
-        const moodIcons = moodIconMap[appliedTheme.name];
-
-        if (!moodIcons) {
-          console.error(
-            "⚠️ moodIconMap에서 해당 테마의 아이콘을 찾을 수 없음:",
-            appliedTheme.name
+        if (appliedTheme) {
+          sessionStorage.setItem(
+            `appliedTheme_${userId}`,
+            JSON.stringify(appliedTheme)
           );
-        } else {
-          localStorage.setItem("moodIcons", JSON.stringify(moodIcons));
+
+          if (moodIconMap?.[appliedTheme.name]) {
+            localStorage.setItem(
+              "moodIcons",
+              JSON.stringify(moodIconMap[appliedTheme.name])
+            );
+          }
         }
       }
 
-      window.dispatchEvent(new Event("storage"));
-
+      // 적용 후 체크박스 및 선택 항목 초기화
       setClickedStates({});
       setSelectedItems([]);
+
+      // 모달 상태 변경
+      console.log("모달 상태 변경:", "applyCompleteModal");
       setModalData({
         name: "적용 완료",
         content: "선택한 테마 또는 폰트가 적용되었습니다.",

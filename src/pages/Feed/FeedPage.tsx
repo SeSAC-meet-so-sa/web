@@ -100,48 +100,26 @@ export default function FeedPage() {
     fetchPosts(1, sortKey.toLowerCase());
   };
 
-  const [moodIcons, setMoodIcons] = useState(themeImages); // 초기값을 themeImages로 설정
+
+  const [moodIcons, setMoodIcons] = useState(themeImages);
 
   useEffect(() => {
-    const updateTheme = () => {
-      const token = localStorage.getItem("accessToken");
-      if (!token) {
-        setMoodIcons(themeImages); // 로그아웃하면 기본 테마로 변경
-        return;
+    const loadAppliedTheme = () => {
+      const userId = localStorage.getItem("userId");
+      const appliedTheme = userId
+        ? JSON.parse(localStorage.getItem(`appliedTheme_${userId}`) || "{}")
+        : JSON.parse(localStorage.getItem("appliedTheme") || "{}");
+
+      if (appliedTheme.name && appliedTheme.moodImages) {
+        setMoodIcons(appliedTheme.moodImages);
       }
-
-      const userId = jwtDecode(token).sub;
-      if (!userId) return;
-
-      const storedTheme = localStorage.getItem(`appliedTheme_${userId}`);
-      const storedIcons = storedTheme ? JSON.parse(storedTheme) : themeImages;
-
-      setMoodIcons(storedIcons);
     };
 
-    updateTheme();
-    window.addEventListener("storage", updateTheme);
+    loadAppliedTheme(); // 초기 실행
+    window.addEventListener("storage", loadAppliedTheme); // 스토리지 변경 감지
 
     return () => {
-      window.removeEventListener("storage", updateTheme);
-    };
-  }, []);
-
-  useEffect(() => {
-    const updateMoodIcons = () => {
-      const storedIcons = localStorage.getItem("moodIcons");
-      const updatedIcons =
-        storedIcons && storedIcons !== "undefined"
-          ? JSON.parse(storedIcons)
-          : themeImages;
-      setMoodIcons(updatedIcons);
-    };
-
-    updateMoodIcons();
-    window.addEventListener("storage", updateMoodIcons);
-
-    return () => {
-      window.removeEventListener("storage", updateMoodIcons);
+      window.removeEventListener("storage", loadAppliedTheme);
     };
   }, []);
 
