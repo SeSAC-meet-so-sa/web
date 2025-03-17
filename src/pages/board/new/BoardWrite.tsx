@@ -270,33 +270,25 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
 
   const [title, setTitle] = useState<string | null>(null); // 초기값을 null로 설정
 
-  const [moodIcons, setMoodIcons] = useState(() => {
-    try {
-      const storedIcons = localStorage.getItem("moodIcons");
-      return storedIcons && storedIcons !== "undefined"
-        ? JSON.parse(storedIcons)
-        : themeImages;
-    } catch (error) {
-      console.error("moodIcons 파싱 중 오류 발생:", error);
-      return themeImages; // 에러 발생 시 기본 테마 반환
-    }
-  });
+  const [moodIcons, setMoodIcons] = useState(themeImages);
 
   useEffect(() => {
-    const updateMoodIcons = () => {
-      const storedIcons = localStorage.getItem("moodIcons");
-      const updatedIcons =
-        storedIcons && storedIcons !== "undefined"
-          ? JSON.parse(storedIcons)
-          : themeImages;
-      setMoodIcons(updatedIcons);
+    const loadAppliedTheme = () => {
+      const userId = localStorage.getItem("userId");
+      const appliedTheme = userId
+        ? JSON.parse(localStorage.getItem(`appliedTheme_${userId}`) || "{}")
+        : JSON.parse(localStorage.getItem("appliedTheme") || "{}");
+
+      if (appliedTheme.name && appliedTheme.moodImages) {
+        setMoodIcons(appliedTheme.moodImages);
+      }
     };
 
-    updateMoodIcons();
-    window.addEventListener("storage", updateMoodIcons);
+    loadAppliedTheme();
+    window.addEventListener("storage", loadAppliedTheme);
 
     return () => {
-      window.removeEventListener("storage", updateMoodIcons);
+      window.removeEventListener("storage", loadAppliedTheme);
     };
   }, []);
 
