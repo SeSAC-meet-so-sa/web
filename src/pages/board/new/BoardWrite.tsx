@@ -266,37 +266,30 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
   // 웹에디터 이미지 관련
   const [content, setContent] = useState("");
   const quillRef = useRef<ReactQuill | null>(null);
-  const [_, setImages] = useState<string[]>([]); // 이미지 URL 배열
+  const [images, setImages] = useState<string[]>([]); // 이미지 URL 배열
 
   const [title, setTitle] = useState<string | null>(null); // 초기값을 null로 설정
 
-  const [moodIcons, setMoodIcons] = useState(() => {
-    try {
-      const storedIcons = localStorage.getItem("moodIcons");
-      return storedIcons && storedIcons !== "undefined"
-        ? JSON.parse(storedIcons)
-        : themeImages;
-    } catch (error) {
-      console.error("moodIcons 파싱 중 오류 발생:", error);
-      return themeImages; // 에러 발생 시 기본 테마 반환
-    }
-  });
+  const [moodIcons, setMoodIcons] = useState(themeImages);
 
   useEffect(() => {
-    const updateMoodIcons = () => {
-      const storedIcons = localStorage.getItem("moodIcons");
-      const updatedIcons =
-        storedIcons && storedIcons !== "undefined"
-          ? JSON.parse(storedIcons)
-          : themeImages;
-      setMoodIcons(updatedIcons);
+    const loadAppliedTheme = () => {
+      const userId = localStorage.getItem("userId");
+      const appliedTheme = userId
+        ? JSON.parse(localStorage.getItem(`appliedTheme_${userId}`) || "{}")
+        : JSON.parse(localStorage.getItem("appliedTheme") || "{}");
+
+      if (appliedTheme.name && appliedTheme.moodImages) {
+        console.log(`🟢 적용된 테마 (사용자 ${userId}):`, appliedTheme.name);
+        setMoodIcons(appliedTheme.moodImages);
+      }
     };
 
-    updateMoodIcons();
-    window.addEventListener("storage", updateMoodIcons);
+    loadAppliedTheme(); // ✅ 초기 실행
+    window.addEventListener("storage", loadAppliedTheme); // ✅ 스토리지 변경 감지
 
     return () => {
-      window.removeEventListener("storage", updateMoodIcons);
+      window.removeEventListener("storage", loadAppliedTheme);
     };
   }, []);
 
@@ -320,6 +313,7 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
     }
   };
 
+  // 이미지 업로드 핸들러
   // 이미지 업로드 핸들러
   const handleImageUpload = async () => {
     const input = document.createElement("input");
@@ -372,6 +366,8 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
     };
   };
 
+  console.log("현재 images 배열:", images);
+
   // 커스텀 툴바 모듈
   const modules = useMemo(
     () => ({
@@ -390,6 +386,10 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
         bindings: {
           enter: {
             key: 13,
+            // handler: (range, context) => {
+            //   // Enter 키 핸들링
+            //   return true;
+            // },
           },
         },
       },
@@ -482,7 +482,6 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
           const response = await axios.get(
             `https://api.meet-da.site/board/${boardId}`
           );
-          setTitle(response.data.title || "제목을 불러올 수 없습니다.");
           setContent(response.data.content);
           setSelected(response.data.visibility); // 가시성 설정
         } catch (error) {
@@ -576,6 +575,7 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
         );
 
         if (response.status === 200) {
+          console.log("게시글 수정 성공:", response.data);
           navigate(`/board/${boardId}`);
         }
       } else {
@@ -585,6 +585,7 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
         );
 
         if (response.status === 201) {
+          console.log("게시글 작성 성공:", response.data);
           const boardId = response.data._id;
 
           // sessionStorage에 상태 저장 (navigate 후에도 유지)
@@ -656,8 +657,10 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
       );
 
       if (moodEntry) {
+        console.log("오늘의 무드 데이터:", moodEntry);
         setTodayMood(moodEntry.mood);
       } else {
+        console.log("⚠️ 오늘의 무드 데이터 없음");
         setTodayMood(null);
       }
     } catch (error) {
@@ -674,7 +677,7 @@ const BoardWrite: React.FC<BoarWriteProps> = ({ isEdit }) => {
     <Wrap>
       <h2>{currentDate}</h2>
       <TitleWrap>
-        <p>{title}</p>
+        <p>{title ?? "불러오는 중..."}</p>
         <div ref={menuRef}>
           <DropdownContainer onClick={toggleDropdown}>
             <SelectMenu>{descriptions[selected]}</SelectMenu>

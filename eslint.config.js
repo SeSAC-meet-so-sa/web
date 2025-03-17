@@ -23,13 +23,4 @@ export default [
     },
   },
   // eslintPluginJsxA11y.flatConfigs.recommended,
-  {
-    rules: {
-      "no-unused-vars": "off", // 기본 ESLint 규칙 비활성화
-      "@typescript-eslint/no-unused-vars": [
-        "warn",
-        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
-      ],
-    },
-  },
 ];

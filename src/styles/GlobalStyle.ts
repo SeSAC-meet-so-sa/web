@@ -1,21 +1,11 @@
 import { fontFiles, themeFonts } from "@/assets/common/themeFonts";
 import { createGlobalStyle } from "styled-components";
 
-// 기본 폰트 설정
+// 기본 폰트
 const defaultFont = "'Pretendard', sans-serif";
 
-// 사용자별 폰트 적용 (sessionStorage에서 가져오기)
-const getAppliedFont = () => {
-  try {
-    const storedFont = sessionStorage.getItem("appliedFont") || defaultFont;
-    return themeFonts[storedFont] ? themeFonts[storedFont] : storedFont;
-  } catch (error) {
-    console.error("폰트 적용 오류:", error);
-    return defaultFont;
-  }
-};
-
-const appliedFont = getAppliedFont();
+// 구매한 폰트 가져오기
+const appliedFont = localStorage.getItem("appliedFont") || defaultFont;
 const appliedFontFile = fontFiles[appliedFont];
 
 const GlobalStyles = createGlobalStyle`
@@ -91,19 +81,20 @@ const GlobalStyles = createGlobalStyle`
     appliedFont !== defaultFont && appliedFontFile
       ? `
       @font-face {
-        font-family: '${themeFonts[appliedFont] || appliedFont}';
+        font-family: '${appliedFont}';
         src: url('${appliedFontFile}') format('truetype');
       }
     `
       : ""
   }
 
-  html, body, * {
-    font-family: ${themeFonts[appliedFont] || appliedFont} !important;
+  * {
+    font-family: ${themeFonts[appliedFont] || defaultFont} !important;
   }
-  
 
-  html {
+  
+ html {
+    font-family: 'Pretendard', sans-serif;
     font-weight: var(--font-regular);
   }
 
@@ -139,7 +130,7 @@ const GlobalStyles = createGlobalStyle`
     cursor: pointer;
     background: none;
     border: none;
-    font-family: '${appliedFont}', Pretendard;
+    font-family: 'Pretendard', sans-serif;
     font-weight: var(--font-regular);
   }
 

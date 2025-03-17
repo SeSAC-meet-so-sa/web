@@ -164,25 +164,27 @@ export default function MoodTrackerModal({
   );
   const [memo, setMemo] = useState<string>(content ?? "");
 
-  const [moodIcons, setMoodIcons] = useState(() => {
-    const storedIcons = localStorage.getItem("moodIcons");
-    return storedIcons ? JSON.parse(storedIcons) : themeImages;
-  });
+  const [moodIcons, setMoodIcons] = useState(themeImages); // 기본값 설정
 
   useEffect(() => {
-    const updateMoodIcons = () => {
-      const storedIcons = localStorage.getItem("moodIcons");
-      const updatedIcons = storedIcons ? JSON.parse(storedIcons) : themeImages;
-      setMoodIcons(updatedIcons);
-    };
+    const appliedTheme = JSON.parse(
+      localStorage.getItem("appliedTheme") || "{}"
+    );
 
-    updateMoodIcons();
-    window.addEventListener("storage", updateMoodIcons);
+    console.log("🟠 테마 변경 감지, 적용된 테마:", appliedTheme);
 
-    return () => {
-      window.removeEventListener("storage", updateMoodIcons);
-    };
+    if (appliedTheme.moodImages) {
+      setMoodIcons(appliedTheme.moodImages); // ✅ 테마 Mood 이미지 업데이트
+    }
   }, []);
+
+  // const moodIcons = appliedTheme.moodImages || {
+  //   joy: "/defaultMood/happy.svg",
+  //   sadness: "/defaultMood/sad.svg",
+  //   neutral: "/defaultMood/normal.svg",
+  //   tired: "/defaultMood/tired.svg",
+  //   anger: "/defaultMood/angry.svg",
+  // };
 
   const moods = [
     { id: "joy", label: "기쁨", src: moodIcons.joy },
