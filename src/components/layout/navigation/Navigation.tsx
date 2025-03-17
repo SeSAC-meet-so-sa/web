@@ -176,8 +176,6 @@ export default function Navigation() {
     navigate("/auth/join");
   };
 
-  const [_, setMoodIcons] = useState(themeImages);
-
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
 
