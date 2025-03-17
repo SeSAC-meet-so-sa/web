@@ -177,19 +177,6 @@ export default function Navigation() {
     navigate("/auth/join");
   };
 
-  // const handleLogout = () => {
-  //   localStorage.removeItem("accessToken");
-
-  //   document.body.style.fontFamily = "'Pretendard', sans-serif";
-  //   sessionStorage.removeItem("appliedFont");
-  //   sessionStorage.removeItem("appliedTheme");
-
-  //   window.dispatchEvent(new Event("storage"));
-
-  //   setIsLoggedIn(false);
-  //   navigate("/auth/login");
-  // };
-
   const [_, setMoodIcons] = useState(themeImages);
 
   const handleLogout = () => {
