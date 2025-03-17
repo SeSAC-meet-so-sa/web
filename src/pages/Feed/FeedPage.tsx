@@ -100,18 +100,6 @@ export default function FeedPage() {
     fetchPosts(1, sortKey.toLowerCase());
   };
 
-  // const [moodIcons, setMoodIcons] = useState(() => {
-  //   try {
-  //     const storedIcons = localStorage.getItem("moodIcons");
-  //     return storedIcons && storedIcons !== "undefined"
-  //       ? JSON.parse(storedIcons)
-  //       : themeImages;
-  //   } catch (error) {
-  //     console.error("moodIcons 파싱 중 오류 발생:", error);
-  //     return themeImages; // 에러 발생 시 기본 테마 반환
-  //   }
-  // });
-
   const [moodIcons, setMoodIcons] = useState(themeImages); // 초기값을 themeImages로 설정
 
   useEffect(() => {
