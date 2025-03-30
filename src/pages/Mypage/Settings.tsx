@@ -1,12 +1,12 @@
 import { MypageButton } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Input";
 import styled from "styled-components";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useIsModalStore } from "@/store/ModalStore";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { jwtDecode } from "jwt-decode";
 import { LuImage } from "react-icons/lu";
 
@@ -138,10 +138,12 @@ const UserProfileImage = styled.img`
   background-repeat: no-repeat;
   border-radius: 0.625rem;
   margin-left: 5rem;
+  object-fit: cover;
 
   @media (max-width: 781px) {
     margin-left: 0;
     margin-bottom: 0.75rem;
+    object-fit: cover;
   }
 `;
 
@@ -159,6 +161,7 @@ const Change = styled.div`
     border: 0.0625rem solid var(--main-text);
     border-radius: 0.5rem;
     margin-top: 0.75rem;
+    color: var(--text-main);
   }
 
   @media (max-width: 781px) {
@@ -197,6 +200,10 @@ const Nickname = styled.div`
     border-radius: 0.5rem;
     font-size: 1.125rem;
     margin: 0;
+
+    &::placeholder {
+      color: var(--text-03);
+    }
   }
 
   @media (max-width: 781px) {
@@ -244,7 +251,7 @@ const Introduce = styled.div`
     margin-left: 5rem;
     font-size: 1.125rem;
     width: 47.125rem;
-    color: var(--text-03);
+    color: var(--main-text);
   }
   > div > textarea {
     width: 47.125rem;
@@ -252,6 +259,7 @@ const Introduce = styled.div`
     padding: 0.75rem 1.25rem;
     font-size: 1.125rem;
     font-weight: var(--font-regular);
+    border: 0.0625rem solid var(--text-02);
 
     &::placeholder {
       color: var(--text-03);
@@ -656,10 +664,17 @@ export default function Settings() {
   const [profileShow, setProfileShow] = useState(false);
 
   const profileSettingClick = () => {
-    setProfileShow((prev) => !prev);
+    setNewUsername(userData.username);
+    setNewDescription(userData.description);
+    setNewProfileImage(null);
+    setProfileShow(true);
   };
   const profileCancelClick = () => {
-    setProfileShow((prev) => !prev);
+    setNewUsername(userData.username);
+    setNewDescription(userData.description);
+    setNewProfileImage(null);
+    setPreviewImage(null);
+    setProfileShow(false);
   };
 
   // 기본 정보
@@ -700,28 +715,69 @@ export default function Settings() {
     resolver: zodResolver(schema),
     mode: "onChange",
   });
-  const onSubmit = (data: FormData) => {
-    if (isValid) {
-      // setIsModalClick("changePassword");
-      console.log(data);
-    }
-  };
+  // const onSubmit = (data: FormData) => {
+  //   if (isValid) {
+  //     // setIsModalClick("changePassword");
+  //     console.log(data);
+  //   }
+  // };
 
   const newPassword = watch("newPassword");
   const confirmNewPassword = watch("confirmNewPassword");
 
+  const handlePasswordChange = async (data: FormData) => {
+    const userId = await getUserId();
+    if (!userId) return;
+
+    try {
+      const response = await axios.patch(
+        `https://api.meet-da.site/user/${userId}/password`,
+        {
+          oldPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }
+      );
+
+      if (response.data.message === "Password updated successfully") {
+        setIsModalClick("changePasswordModal");
+      }
+    } catch (error) {
+      const axiosError = error as AxiosError<{
+        message: string;
+        error: string;
+        statusCode: number;
+      }>;
+
+      const message = axiosError.response?.data?.message;
+
+      if (message === "Password is the same as current password") {
+        alert("새 비밀번호가 기존 비밀번호와 같습니다.");
+      } else if (message === "Current password is incorrect") {
+        alert("현재 비밀번호가 올바르지 않습니다.");
+      } else {
+        alert("비밀번호 변경 중 오류가 발생했습니다.");
+      }
+    }
+  };
+
+  const onSubmit = (data: FormData) => {
+    if (isValid) {
+      handlePasswordChange(data); // 여기서 성공 시 모달 띄우기
+    }
+  };
+
   // 비밀번호 변경 모달
   const setIsModalClick = useIsModalStore((state) => state.setIsModalClick);
 
-  const ChangePassword = (type?: string) => {
-    console.log(type);
+  // const ChangePassword = (type?: string) => {
+  //   console.log(type);
 
-    if (type) {
-      setIsModalClick(type);
-    } else {
-      setIsModalClick();
-    }
-  };
+  //   if (type) {
+  //     setIsModalClick(type);
+  //   } else {
+  //     setIsModalClick();
+  //   }
+  // };
 
   // 회원탈퇴 모달
   const DeleteId = (type?: string) => {
@@ -769,6 +825,58 @@ export default function Settings() {
     fetchUserData();
   }, []);
 
+  const [newProfileImage, setNewProfileImage] = useState<File | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [newUsername, setNewUsername] = useState(userData.username);
+  const [newDescription, setNewDescription] = useState(userData.description);
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleImageChangeClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewProfileImage(file);
+
+      const previewURL = URL.createObjectURL(file);
+      setPreviewImage(previewURL);
+    }
+  };
+
+  const handleProfileSave = async () => {
+    const userId = await getUserId();
+    if (!userId) return;
+
+    const formData = new FormData();
+    formData.append("username", newUsername || userData.username);
+    formData.append("description", newDescription || userData.description);
+
+    if (newProfileImage) {
+      formData.append("profileImage", newProfileImage);
+    }
+
+    try {
+      const response = await axios.patch(
+        `https://api.meet-da.site/user/${userId}/profile`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      const { username, profileImage, description } = response.data;
+      setUserData({ ...userData, username, profileImage, description });
+      setPreviewImage(null);
+      setProfileShow(false);
+
+      localStorage.setItem("profileImage", profileImage);
+      window.dispatchEvent(new Event("storage"));
+    } catch (err) {
+      console.error("프로필 업데이트 실패:", err);
+    }
+  };
+
   return (
     <>
       <Layout>
@@ -780,7 +888,12 @@ export default function Settings() {
                 <ProfileImage changeVisible={profileShow}>
                   <span>프로필 사진</span>
                   <ImageWrap>
-                    {userData.profileImage ? (
+                    {previewImage ? (
+                      <UserProfileImage
+                        src={previewImage}
+                        alt="미리보기 이미지"
+                      />
+                    ) : userData.profileImage ? (
                       <UserProfileImage
                         src={userData.profileImage}
                         alt="Profile"
@@ -794,7 +907,14 @@ export default function Settings() {
                       <Change>
                         <span>png, jpg, jpeg의 확장자</span>
                         <span>5MB 이하의 이미지</span>
-                        <button>변경</button>
+                        <button onClick={handleImageChangeClick}>변경</button>
+                        <input
+                          type="file"
+                          accept="image/png, image/jpeg, image/jpg"
+                          style={{ display: "none" }}
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                        />
                       </Change>
                     )}
                   </ImageWrap>
@@ -804,7 +924,12 @@ export default function Settings() {
                   {!profileShow ? (
                     <span>{userData.username}</span>
                   ) : (
-                    <InputStyle type="text" placeholder={userData.username} />
+                    <InputStyle
+                      type="text"
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      placeholder={userData.username}
+                    />
                   )}
                 </Nickname>
                 <Introduce>
@@ -815,7 +940,11 @@ export default function Settings() {
                         "다양한 믿으미들에게 나를 소개해보세요!"}
                     </span>
                   ) : (
-                    <Textarea placeholder="다양한 믿으미들에게 나를 소개해보세요!" />
+                    <Textarea
+                      value={newDescription}
+                      onChange={(e) => setNewDescription(e.target.value)}
+                      placeholder="다양한 믿으미들에게 나를 소개해보세요!"
+                    />
                   )}
                 </Introduce>
               </ProfileBox>
@@ -830,7 +959,9 @@ export default function Settings() {
                   <MypageButton $variant="cancel" onClick={profileCancelClick}>
                     취소
                   </MypageButton>
-                  <MypageButton $variant="active">저장</MypageButton>
+                  <MypageButton $variant="active" onClick={handleProfileSave}>
+                    저장
+                  </MypageButton>
                 </SaveCancelButton>
               )}
             </ProfileWrap>
@@ -974,7 +1105,7 @@ export default function Settings() {
                       </MypageButton>
                       <MypageButton
                         $variant="active"
-                        onClick={() => ChangePassword("changePasswordModal")}
+                        onClick={handleSubmit(onSubmit)}
                       >
                         저장
                       </MypageButton>

@@ -193,6 +193,10 @@ export const PostText = styled.div`
   text-align: start;
   line-height: 1.5;
   padding: 0 1rem;
+  word-wrap: break-word;
+  word-break: break-all;
+  overflow-wrap: break-word;
+  white-space: normal;
 
   @media (max-width: 390px) {
     font-size: 0.75rem;
