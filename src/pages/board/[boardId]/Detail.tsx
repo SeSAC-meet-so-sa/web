@@ -382,6 +382,8 @@ export default function BoardDetail() {
         },
       });
 
+      console.log("author", postData.author);
+
       setIsBookmarked(postData.bookmarks.includes(userId));
       setIsLiked(postData.likes.includes(userId));
       setLikeCount(postData.likes.length);
@@ -899,9 +901,7 @@ export default function BoardDetail() {
           <Profile>
             <p>{post.author.username}</p>
             <span>
-              {post.author.description !== ""
-                ? post.author.description
-                : "믿-다에서 서로를 믿어보세요"}
+              {post.author.description ? post.author.description : ""}
             </span>
           </Profile>
         </UserInfoWrap>

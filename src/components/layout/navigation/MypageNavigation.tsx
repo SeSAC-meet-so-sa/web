@@ -347,6 +347,15 @@ export default function MypageNavigation() {
     }
   };
 
+  useEffect(() => {
+    const handleStorageChange = () => {
+      fetchUserData(); // 프로필 이미지 새로 불러오기
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
   const location = useLocation(); // 현재 경로를 가져옴
   const navigate = useNavigate();
 

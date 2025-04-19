@@ -77,6 +77,8 @@ export default function ChangePasswordModal() {
   const setIsModalClick = useIsModalStore((state) => state.setIsModalClick);
   const onClickCheck = () => {
     setIsModalClick();
+    localStorage.removeItem("accessToken");
+    window.location.href = "/auth/login";
   };
 
   return (
